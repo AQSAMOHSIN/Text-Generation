@@ -12,25 +12,37 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using:", device)
 
 
-class RNNModel(nn.Module):
-    def __init__(self, vocab_size, embed_dim=128, hidden_dim=256):
+class LSTMTextGen(nn.Module):
+    def __init__(self, vocab_size, embed_dim=128, hidden_dim=256, num_layers=1, dropout=0.1):
         super().__init__()
         self.hidden_dim = hidden_dim
+        self.num_layers = num_layers
+
         self.embed = nn.Embedding(vocab_size, embed_dim)
-        self.rnn = nn.RNN(embed_dim, hidden_dim, batch_first=True)
+
+        self.lstm = nn.LSTM(
+            embed_dim,
+            hidden_dim,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout if num_layers > 1 else 0.0
+        )
+
         self.fc = nn.Linear(hidden_dim, vocab_size)
 
-    def forward(self, x, hidden=None):
+    def forward(self, x, hidden):
         x = self.embed(x)
-        out, hidden = self.rnn(x, hidden)
+        out, hidden = self.lstm(x, hidden)
         logits = self.fc(out)
         return logits, hidden
 
     def init_hidden(self, batch):
-        return torch.zeros(1, batch, self.hidden_dim).to(device)
+        h = torch.zeros(self.num_layers, batch, self.hidden_dim).to(device)
+        c = torch.zeros(self.num_layers, batch, self.hidden_dim).to(device)
+        return (h, c)
 
 
-class RNN:
+class LSTM:
     def __init__(self, data_path):
         self.config = Config()
         self.data_path = data_path
@@ -78,10 +90,10 @@ class RNN:
         probs = torch.softmax(logits, dim=-1)
         return torch.multinomial(probs, 1).item()
 
-    def text_generate(self, idx2char, char2idx, vocab_size, start="ROMEO:", length=500, temperature=0.8):
-        model = RNNModel(vocab_size).to(device)
+    def text_generate(self, idx2char, char2idx, vocab_size, start="ROMEO:", length=500, temperature=0.7):
+        model = LSTMTextGen(vocab_size).to(device)
 
-        pretrained_path = os.getcwd() + "/Text-Generation/shakespeare_rnn.pth"
+        pretrained_path = os.getcwd() + "/Text-Generation/shakespeare_lstm.pth"
 
         # # load pretrained model
         # model.load_state_dict(torch.load(pretrained_path, map_location=device))
@@ -137,9 +149,9 @@ class RNN:
         return ckpt
 
     def perplexity_measure(self, vocab_size, loader):
-        model = RNNModel(vocab_size).to(device)
+        model = LSTMTextGen(vocab_size).to(device)
 
-        pretrained_path = os.getcwd() + "/Text-Generation/shakespeare_rnn.pth"
+        pretrained_path = os.getcwd() + "/Text-Generation/shakespeare_lstm.pth"
 
         state_dict = self.load_state_dict_from_ckpt(pretrained_path, device)
         model.load_state_dict(state_dict)
@@ -176,3 +188,22 @@ class RNN:
         bpc = avg_nll / math.log(2)
 
         return {"char_ppl": ppl, "bpc": bpc, "char_nll": avg_nll, "N_chars": total_tokens}
+
+        # total_loss = 0.0
+        # total_tokens = 0
+
+        # with torch.no_grad():
+        #     for inputs, targets in data_loader:
+        #         inputs, targets = inputs.to(device), targets.to(device)
+        #         batch_size, seq_len = inputs.size()
+        #         hidden = model.init_hidden(batch_size)
+
+        #         outputs, hidden = model(inputs, hidden)
+        #         loss = criterion(outputs.view(-1, outputs.size(-1)),
+        #                          targets.view(-1))
+        #         total_loss += loss.item() * batch_size * seq_len
+        #         total_tokens += batch_size * seq_len
+
+        # avg_loss = total_loss / total_tokens
+        # perplexity = torch.exp(torch.tensor(avg_loss))
+        # return perplexity.item()

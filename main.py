@@ -1,11 +1,12 @@
 from n_gram import BackoffNGramLanguageModel, plot_histograms
 from config import Config
 from RNN import RNNModel, RNN
+from LSTM import LSTMTextGen, LSTM
 import torch
 import random
 
 
-def main(n, model_choice, data_path):
+def main(n, model_choice, data_path, prompt, length, temp):
     config = Config()
 
     if model_choice == 'ngram':
@@ -22,20 +23,22 @@ def main(n, model_choice, data_path):
         ngram_model.train(train_sents)
         stats = ngram_model.perplexity_with_stats(test_sents)
 
-        print(f"\n=== n={n} ===")
-        print("Perplexity:", stats["ppl"])
-        print("Unigram fallback rate:", stats["unigram_fallback_rate"])
-        print("Used-order counts:", dict(stats["used_order_counts"]))
+        # print(f"\n=== n={n} ===")
+        # print("Perplexity:", stats["ppl"])
+        # print("Unigram fallback rate:", stats["unigram_fallback_rate"])
+        # print("Used-order counts:", dict(stats["used_order_counts"]))
 
         print("\nGenerated Text:")
         print(ngram_model.generate_text(
-            max_length=500,
+            max_length=length,
             method="random",
-            seed_text="ROMEO:",
-            temperature=0.8
+            seed_text=prompt,
+            temperature=temp
         ))
 
-        plot_histograms(stats, 3)
+        return stats
+
+        # plot_histograms(stats, 3)
 
     if model_choice == 'RNN':
         print("\nTraining RNN Language Model...")
@@ -50,10 +53,31 @@ def main(n, model_choice, data_path):
 
         print("\nGenerated Text:")
         print(rnn_trainer.text_generate
-              (idx2char, char2idx, vocab_size, start="ROMEO:", length=500, temperature=0.8))
+              (idx2char, char2idx, vocab_size, start=prompt, length=length, temperature=temp))
+
+        return idx2char, char2idx, vocab_size, encoded
+
+    if model_choice == 'LSTM':
+        print("\nTraining LSTM Language Model...")
+
+        lstm_trainer = LSTM(data_path)
+
+        text = lstm_trainer.load()
+        vocab_size, chars = lstm_trainer.build_vocab(text)
+        char2idx = lstm_trainer.vectorise_text(chars)
+        idx2char = lstm_trainer.devectorise_text(char2idx)
+        encoded = lstm_trainer.encode_text(text, char2idx)
+        print("\nGenerated Text:")
+        print(lstm_trainer.text_generate
+              (idx2char, char2idx, vocab_size, start=prompt, length=length, temperature=temp))
+
+        return idx2char, char2idx, vocab_size, encoded
+
+    if model_choice == 'TRANSFORMER':
+        pass  # Placeholder for future Transformer model implementation
 
 
 data_path = "/Users/laibaqureshi/Desktop/Text Generation/Text-Generation/shakespeare_2.txt"
-# Choose 'ngram' or 'RNN'
+# Choose 'ngram' or 'RNN' or 'LSTM' as model_choice
 # main(n=3, model_choice='RNN', data_path=data_path)
-main(n=3, model_choice='ngram', data_path=data_path)
+# main(n=3, model_choice='ngram', data_path=data_path)
