@@ -176,7 +176,6 @@ class LSTM:
                 hidden = hidden.to(device)
 
             logits, _ = model(x, hidden)     # expected [B, T, V]
-            # If your model outputs [T, B, V], uncomment next line:
             # logits = logits.transpose(0, 1)
 
             total_nll += loss_fn(logits.reshape(-1, vocab_size),

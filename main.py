@@ -29,14 +29,14 @@ def main(n, model_choice, data_path, prompt, length, temp):
         # print("Used-order counts:", dict(stats["used_order_counts"]))
 
         print("\nGenerated Text:")
-        print(ngram_model.generate_text(
+        gen_text = ngram_model.generate_text(
             max_length=length,
             method="random",
             seed_text=prompt,
             temperature=temp
-        ))
-
-        return stats
+        )
+        print(gen_text)
+        return stats, gen_text
 
         # plot_histograms(stats, 3)
 
@@ -52,10 +52,11 @@ def main(n, model_choice, data_path, prompt, length, temp):
         encoded = rnn_trainer.encode_text(text, char2idx)
 
         print("\nGenerated Text:")
-        print(rnn_trainer.text_generate
-              (idx2char, char2idx, vocab_size, start=prompt, length=length, temperature=temp))
+        gen_text = rnn_trainer.text_generate(
+            idx2char, char2idx, vocab_size, start=prompt, length=length, temperature=temp)
+        print(gen_text)
 
-        return idx2char, char2idx, vocab_size, encoded
+        return idx2char, char2idx, vocab_size, encoded, gen_text
 
     if model_choice == 'LSTM':
         print("\nTraining LSTM Language Model...")
@@ -68,11 +69,11 @@ def main(n, model_choice, data_path, prompt, length, temp):
         idx2char = lstm_trainer.devectorise_text(char2idx)
         encoded = lstm_trainer.encode_text(text, char2idx)
         print("\nGenerated Text:")
-        print(lstm_trainer.text_generate
-              (idx2char, char2idx, vocab_size, start=prompt, length=length, temperature=temp))
+        gen_text = lstm_trainer.text_generate(
+            idx2char, char2idx, vocab_size, start=prompt, length=length, temperature=temp)
+        print(gen_text)
 
-        return idx2char, char2idx, vocab_size, encoded
-
+        return idx2char, char2idx, vocab_size, encoded, gen_text
     if model_choice == 'TRANSFORMER':
         pass  # Placeholder for future Transformer model implementation
 

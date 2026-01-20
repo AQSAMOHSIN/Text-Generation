@@ -1,3 +1,5 @@
+import numpy as np
+from sacrebleu.metrics import BLEU
 from n_gram import BackoffNGramLanguageModel, plot_histograms
 from config import Config
 from RNN import RNNModel, RNN
@@ -9,7 +11,7 @@ from config import Config
 from dataset import CharDataset
 from torch.utils.data import Dataset, DataLoader
 
-data_path = "/Users/laibaqureshi/Desktop/Text Generation/Text-Generation/shakespeare_2.txt"
+data_path = """/Users/laibaqureshi/Desktop/Text Generation/Text-Generation/shakespeare_2.txt"""
 config = Config()
 lstm_loader = LSTM(data_path)
 rnn_loader = RNN(data_path)
@@ -17,15 +19,15 @@ rnn_loader = RNN(data_path)
 
 def compare_generated_texts(data_path, prompt="ROMEO:", length=500, temp=0.8):
     print("Generated text through n-gram model:")
-    n_gram_stats = main(n=3, model_choice='ngram', data_path=data_path,
-                        prompt=prompt, length=length, temp=temp)
+    n_gram_stats, gen_text = main(n=3, model_choice='ngram', data_path=data_path,
+                                  prompt=prompt, length=length, temp=temp)
 
     print("Generated text through RNN model:")
-    rnn_idx2char, rnn_char2idx, rnn_vocab_size, rnn_encoded = main(
+    rnn_idx2char, rnn_char2idx, rnn_vocab_size, rnn_encoded, gen_text = main(
         n=3, model_choice='RNN', data_path=data_path, prompt=prompt, length=length, temp=temp)
 
     print("Generated text through LSTM model:")
-    lstm_idx2char, lstm_char2idx, lstm_vocab_size, lstm_encoded = main(
+    lstm_idx2char, lstm_char2idx, lstm_vocab_size, lstm_encoded, gen_text = main(
         n=3, model_choice='LSTM', data_path=data_path, prompt=prompt, length=length, temp=temp)
 
     return n_gram_stats, (rnn_idx2char, rnn_char2idx, rnn_vocab_size, rnn_encoded), (lstm_idx2char, lstm_char2idx, lstm_vocab_size, lstm_encoded)
@@ -73,6 +75,75 @@ perplexity_measure(rnn_encoded, rnn_vocab_size, model_type='RNN')
 perplexity_measure(lstm_encoded, lstm_vocab_size, model_type='LSTM')
 perplexity_measure(None, None, model_type='ngram', stats=n_gram_stats, n=3)
 
+
+def self_bleu_word(texts, max_refs=None, seed=0, lowercase=True):
+    """
+    Word-level Self-BLEU (BLEU-4 by default in sacrebleu).
+    Higher Self-BLEU = samples are more similar (less diverse).
+    Lower Self-BLEU = more diverse generations.
+    """
+    rng = np.random.default_rng(seed)
+    bleu = BLEU(lowercase=lowercase, effective_order=True)
+
+    scores = []
+    N = len(texts)
+
+    for i in range(N):
+        hyp = texts[i]
+        refs = [texts[j] for j in range(N) if j != i]
+
+        # With N=10, you can just use all refs; max_refs is optional
+        if max_refs is not None and len(refs) > max_refs:
+            idx = rng.choice(len(refs), size=max_refs, replace=False)
+            refs = [refs[k] for k in idx]
+
+        s = bleu.sentence_score(hyp, refs).score  # 0..100
+        scores.append(s)
+
+    return float(np.mean(scores)), float(np.std(scores)), scores
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def generate_k_samples(model_choice, data_path, prompt, length, temp, k=10, base_seed=123):
+    samples = []
+    for i in range(k):
+        set_seed(base_seed + i)
+
+        if model_choice == 'ngram':
+            _, out = main(n=3, model_choice=model_choice, data_path=data_path,
+                          prompt=prompt, length=length, temp=temp)
+        else:
+            _, _, _, _, out = main(n=3, model_choice=model_choice, data_path=data_path,
+                                   prompt=prompt, length=length, temp=temp)
+        generated_text = out
+
+        samples.append(generated_text)
+    return samples
+
+
+k = 10
+prompt = "ROMEO:"
+length = 500
+temp = 0.8
+
+ngram_samples = generate_k_samples(
+    "ngram", data_path, prompt, length, temp, k=k)
+rnn_samples = generate_k_samples("RNN",   data_path, prompt, length, temp, k=k)
+lstm_samples = generate_k_samples(
+    "LSTM",  data_path, prompt, length, temp, k=k)
+
+for name, samples in [("n-gram", ngram_samples), ("RNN", rnn_samples), ("LSTM", lstm_samples)]:
+    mean_sb, std_sb, _ = self_bleu_word(samples, lowercase=True)
+    print(f"{name} Self-BLEU (word, BLEU-4) : {mean_sb:.2f} ± {std_sb:.2f}")
+
+
 # evaluate diversity -> no gram uniqueness
 
 # def ngram_repetition(text, n=3):
@@ -85,26 +156,3 @@ perplexity_measure(None, None, model_type='ngram', stats=n_gram_stats, n=3)
 
 # print("RNN repetitions:", ngram_repetition(rnn_text))
 # print("LSTM repetitions:", ngram_repetition(lstm_text))
-
-# # evaluate collapse -> repition loops
-
-
-# def detects_loop(text):
-#     for n in [3, 4, 5, 6]:
-#         for i in range(len(text)-n*2):
-#             if text[i:i+n] == text[i+n:i+2*n]:
-#                 return True
-#     return False
-
-
-# print("RNN loop:", detects_loop(rnn_text))
-# print("LSTM loop:", detects_loop(lstm_text))
-
-# # evaluate creativity with temperature
-
-# for temp in [0.6, 0.9, 1.2]:
-#     print(f"\n====== TEMP {temp} - RNN ======")
-#     print(generate(rnn_model, "ROMEO:\n", 250, temp))
-
-#     print(f"\n====== TEMP {temp} - LSTM ======")
-#     print(generate(lstm_model, "ROMEO:\n", 250, temp))

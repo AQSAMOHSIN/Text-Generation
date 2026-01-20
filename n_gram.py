@@ -261,36 +261,36 @@ def plot_histograms(stats, n):
         plt.show()
 
 
-# path = "/Users/laibaqureshi/Desktop/Text Generation/Text-Generation/shakespeare_2.txt"
+path = "/Users/laibaqureshi/Desktop/Text Generation/Text-Generation/shakespeare_2.txt"
 
-# sentences = BackoffNGramLanguageModel(n=3).load(path)
-# random.shuffle(sentences)  # important: avoid “last 20% is different”
+sentences = BackoffNGramLanguageModel(path, n=3).load()
+random.shuffle(sentences)  # important: avoid “last 20% is different”
 
-# split = int(0.8 * len(sentences))
-# train_sents = sentences[:split]
-# test_sents = sentences[split:]
+split = int(0.8 * len(sentences))
+train_sents = sentences[:split]
+test_sents = sentences[split:]
 
-# for n in [3]:
-#     model = BackoffNGramLanguageModel(n=n, min_count=2)
-#     model.train(train_sents)
-#     stats = model.perplexity_with_stats(test_sents)
+for n in [1, 2, 3]:
+    model = BackoffNGramLanguageModel(path, n=n, min_count=2)
+    model.train(train_sents)
+    stats = model.perplexity_with_stats(test_sents)
 
-#     print(f"\n=== n={n} ===")
-#     print("Perplexity:", stats["ppl"])
-#     print("Unigram fallback rate:", stats["unigram_fallback_rate"])
-#     print("Used-order counts:", dict(stats["used_order_counts"]))
+    print(f"\n=== n={n} ===")
+    print("Perplexity:", stats["ppl"])
+    print("Unigram fallback rate:", stats["unigram_fallback_rate"])
+    print("Used-order counts:", dict(stats["used_order_counts"]))
 
-#     print(model.generate_text(
-#         max_length=50,
-#         method="random",
-#         seed_text="from fairest creatures",
-#         temperature=1.0
-#     ))
+    print(model.generate_text(
+        max_length=50,
+        method="random",
+        seed_text="from fairest creatures",
+        temperature=1.0
+    ))
 
-#     print(model.generate_text(
-#         max_length=50,
-#         method="greedy",
-#         seed_text="from fairest creatures"
-#     ))
+    print(model.generate_text(
+        max_length=50,
+        method="greedy",
+        seed_text="from fairest creatures"
+    ))
 
-#     plot_histograms(stats, n)
+    plot_histograms(stats, n)
