@@ -4,6 +4,7 @@ from RNN import RNNModel, RNN
 from LSTM import LSTMTextGen, LSTM
 import torch
 import random
+from LLM import GPT2fineTuned
 
 
 def main(n, model_choice, data_path, prompt, length, temp):
@@ -28,7 +29,7 @@ def main(n, model_choice, data_path, prompt, length, temp):
         # print("Unigram fallback rate:", stats["unigram_fallback_rate"])
         # print("Used-order counts:", dict(stats["used_order_counts"]))
 
-        print("\nGenerated Text:")
+        print("\nN-gram Generated Text:")
         gen_text = ngram_model.generate_text(
             max_length=length,
             method="random",
@@ -51,7 +52,7 @@ def main(n, model_choice, data_path, prompt, length, temp):
         idx2char = rnn_trainer.devectorise_text(char2idx)
         encoded = rnn_trainer.encode_text(text, char2idx)
 
-        print("\nGenerated Text:")
+        print("\nRNN Generated Text:")
         gen_text = rnn_trainer.text_generate(
             idx2char, char2idx, vocab_size, start=prompt, length=length, temperature=temp)
         print(gen_text)
@@ -68,14 +69,23 @@ def main(n, model_choice, data_path, prompt, length, temp):
         char2idx = lstm_trainer.vectorise_text(chars)
         idx2char = lstm_trainer.devectorise_text(char2idx)
         encoded = lstm_trainer.encode_text(text, char2idx)
-        print("\nGenerated Text:")
+        print("\nLSTM Generated Text:")
         gen_text = lstm_trainer.text_generate(
             idx2char, char2idx, vocab_size, start=prompt, length=length, temperature=temp)
         print(gen_text)
 
         return idx2char, char2idx, vocab_size, encoded, gen_text
     if model_choice == 'TRANSFORMER':
-        pass  # Placeholder for future Transformer model implementation
+        gpt2 = GPT2fineTuned()
+        print("\nLLM Generated Text:")
+        gen_text = gpt2.generate_text(
+            prompt,
+            max_new_tokens=length,
+            temperature=temp,
+            top_p=0.9,
+            top_k=50)
+        print(gen_text)
+        return gen_text
 
 
 data_path = "/Users/laibaqureshi/Desktop/Text Generation/Text-Generation/shakespeare_2.txt"
