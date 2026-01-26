@@ -119,6 +119,10 @@ def generate_k_samples(model_choice, data_path, prompt, length, temp, k=10, base
         if model_choice == 'ngram':
             _, out = main(n=3, model_choice=model_choice, data_path=data_path,
                           prompt=prompt, length=length, temp=temp)
+        elif model_choice == 'TRANSFORMER':
+            gen_text = main(n=3, model_choice=model_choice, data_path=data_path,
+                            prompt=prompt, length=length, temp=temp)
+            out = gen_text
         else:
             _, _, _, _, out = main(n=3, model_choice=model_choice, data_path=data_path,
                                    prompt=prompt, length=length, temp=temp)
@@ -138,8 +142,10 @@ ngram_samples = generate_k_samples(
 rnn_samples = generate_k_samples("RNN",   data_path, prompt, length, temp, k=k)
 lstm_samples = generate_k_samples(
     "LSTM",  data_path, prompt, length, temp, k=k)
+llm_samples = generate_k_samples(
+    "TRANSFORMER",  data_path, prompt, length, temp, k=k)
 
-for name, samples in [("n-gram", ngram_samples), ("RNN", rnn_samples), ("LSTM", lstm_samples)]:
+for name, samples in [("n-gram", ngram_samples), ("RNN", rnn_samples), ("LSTM", lstm_samples), ("LLM", llm_samples)]:
     mean_sb, std_sb, _ = self_bleu_word(samples, lowercase=True)
     print(f"{name} Self-BLEU (word, BLEU-4) : {mean_sb:.2f} ± {std_sb:.2f}")
 
