@@ -64,16 +64,16 @@ def perplexity_measure(encoded, vocab_size, model_type, stats=None, n=None):
 
     if model_type == 'ngram':
         print(f"\n=== n={n} ===")
-        print("Perplexity:", stats["ppl"])
+        print("Perplexity:", stats["ppl"], stats["bpc"])
         print("Unigram fallback rate:", stats["unigram_fallback_rate"])
         print("Used-order counts:", dict(stats["used_order_counts"]))
-        plot_histograms(stats, 3)
+        # plot_histograms(stats, 3)
 
 
 print("\nEvaluating Perplexity on Test Set:")
 perplexity_measure(rnn_encoded, rnn_vocab_size, model_type='RNN')
 perplexity_measure(lstm_encoded, lstm_vocab_size, model_type='LSTM')
-perplexity_measure(None, None, model_type='ngram', stats=n_gram_stats, n=3)
+perplexity_measure(None, None, model_type='ngram', stats=n_gram_stats, n=2)
 
 
 def self_bleu_word(texts, max_refs=None, seed=0, lowercase=True):
@@ -132,22 +132,22 @@ def generate_k_samples(model_choice, data_path, prompt, length, temp, k=10, base
     return samples
 
 
-k = 10
-prompt = "ROMEO:"
-length = 500
-temp = 0.8
+# k = 10
+# prompt = "ROMEO:"
+# length = 500
+# temp = 0.8
 
-ngram_samples = generate_k_samples(
-    "ngram", data_path, prompt, length, temp, k=k)
-rnn_samples = generate_k_samples("RNN",   data_path, prompt, length, temp, k=k)
-lstm_samples = generate_k_samples(
-    "LSTM",  data_path, prompt, length, temp, k=k)
-llm_samples = generate_k_samples(
-    "TRANSFORMER",  data_path, prompt, length, temp, k=k)
+# ngram_samples = generate_k_samples(
+#     "ngram", data_path, prompt, length, temp, k=k)
+# rnn_samples = generate_k_samples("RNN",   data_path, prompt, length, temp, k=k)
+# lstm_samples = generate_k_samples(
+#     "LSTM",  data_path, prompt, length, temp, k=k)
+# llm_samples = generate_k_samples(
+#     "TRANSFORMER",  data_path, prompt, length, temp, k=k)
 
-for name, samples in [("n-gram", ngram_samples), ("RNN", rnn_samples), ("LSTM", lstm_samples), ("LLM", llm_samples)]:
-    mean_sb, std_sb, _ = self_bleu_word(samples, lowercase=True)
-    print(f"{name} Self-BLEU (word, BLEU-4) : {mean_sb:.2f} ± {std_sb:.2f}")
+# for name, samples in [("n-gram", ngram_samples), ("RNN", rnn_samples), ("LSTM", lstm_samples), ("LLM", llm_samples)]:
+#     mean_sb, std_sb, _ = self_bleu_word(samples, lowercase=True)
+#     print(f"{name} Self-BLEU (word, BLEU-4) : {mean_sb:.2f} ± {std_sb:.2f}")
 
 
 # evaluate diversity -> no gram uniqueness

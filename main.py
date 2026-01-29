@@ -32,7 +32,7 @@ def main(n, model_choice, data_path, prompt, length, temp):
         print("\nN-gram Generated Text:")
         gen_text = ngram_model.generate_text(
             max_length=length,
-            method="random",
+            method="greedy",
             seed_text=prompt,
             temperature=temp
         )
@@ -92,3 +92,10 @@ data_path = "/Users/laibaqureshi/Desktop/Text Generation/Text-Generation/shakesp
 # Choose 'ngram' or 'RNN' or 'LSTM' as model_choice
 # main(n=3, model_choice='RNN', data_path=data_path)
 # main(n=3, model_choice='ngram', data_path=data_path)
+models = ['ngram', 'RNN', 'LSTM', 'TRANSFORMER']
+prompt = "ROMEO:"
+length = 500
+temp = 0.8
+for model in models:
+    main(n=3, model_choice=model, data_path=data_path,
+         prompt=prompt, length=length, temp=temp)

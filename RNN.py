@@ -66,11 +66,11 @@ class RNN:
         # Convert chars in text to indices.
         encoded = torch.tensor([char2idx[char]
                                for char in text], dtype=torch.long)
-        print("Encoded shape:", encoded.shape)
+        # print("Encoded shape:", encoded.shape)
 
-        print("Original vs Encoded text:")
-        print("Original text:", text[:200])
-        print("Vectorised/Encoded text:", encoded[:200])
+        # print("Original vs Encoded text:")
+        # print("Original text:", text[:200])
+        # print("Vectorised/Encoded text:", encoded[:200])
         return encoded
 
     def sample_logits(self, logits, temperature=1.0):

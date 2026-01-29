@@ -214,9 +214,13 @@ class BackoffNGramLanguageModel:
                 N += 1
 
         ppl = math.exp(-log_prob / max(N, 1))
+        full_text = "\n".join([s for s in sentences if s.strip()])
+        total_chars = len(full_text)
+        bpc = (-log_prob / math.log(2)) / max(total_chars, 1)
 
         stats = {
             "ppl": ppl,
+            "bpc": bpc,
             "N_tokens": N,
             "used_order_counts": used_order_counts,
             "unigram_fallback_rate": (used_order_counts[1] / max(N, 1)),
